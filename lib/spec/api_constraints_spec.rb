@@ -1,30 +1,19 @@
 require 'spec_helper'
 
-describe ApiConstraints do
-  let(:api_constraints_v1) { ApiConstraints.new(version: 1) }
-  let(:api_constraints_v2) { ApiConstraints.new(version: 2, default: true) }
+describe Api::V1::UsersController do
+  before(:each) { request.headers['Accept'] = "application/vnd.marketplace.v1" }
 
-  describe "matches?" do
-    
-    it "returns true when the version matches the 'Accept' header" do
-      request = double(host: 'api.marketplace.dev', headers: {"Accept" => "application/vnd.marketplace.v1"})
-      expect(api_constraints_v2.matches?(request)).to be_truthy
+  describe "GET #show" do
+    before(:each) do
+      @user = FactoryGirl.create :user
+      get :show, id: @user.id, format: :json
     end
 
-    it "returns the default version when 'default' option is specified" do
-      request = double(host: 'api.marketplace.dev')
-      expect(api_constraints_v2.matches?(request)).to be_truthy
+    it "returns the information about a reporter on a hash" do
+      user_response = JSON.parse(response.body, symbolize_names: true)
+      expect(user_response[:email]).to eql @user.email
     end
-  end
-end
 
-class ApiConstraints
-  def initialize(options)
-    @version = options[:version]
-    @default = options[:default]
-  end
-
-  def matches?(req)
-    @default || req.headers['Accept'].include?("application/vnd.marketplace.v#{@version}")
+    it { should respond_with 200 }
   end
 end
